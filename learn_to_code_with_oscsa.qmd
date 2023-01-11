@@ -1,0 +1,115 @@
+---
+title: "Learn to Code with OSCSA"
+author: Open Science Community Saudi Arabia (OSCSA)
+format:
+  html:
+    theme: cosmo
+---
+
+## Helping with Visualizing Data for Noura AlMuqati
+
+Noura AlMuqati, OSCSA members, asked for assistance in visualizing data by ggplot2 by providing the data and a sample plot
+
+### Cleaning up the data
+
+```{r}
+#| warning: false
+#| output: false
+
+library(here)
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(knitr)
+
+  # import the data
+data_noura_alMuqati <- read_excel("data/data_noura_alMuqati.xlsx")
+
+data_noura_alMuqati <-  data_noura_alMuqati %>% 
+  # clean the column names to remove spaces and capitalization
+  janitor::clean_names() %>% 
+  # remove row with empty values (na)
+  drop_na() %>% 
+  # create a new column for percentage by multiplying the freq *100 
+  mutate(perc = frequency * 100) %>% 
+  # create a new column combining the name of the drug and the percentage between brackets
+  mutate(drug_perc = str_c(drugs, " (", frequency, "%)"))
+geom_crossbar
+
+```
+### View the Data after Cleaning 
+
+```{r}
+#| warning: false
+kable(head(data_noura_alMuqati, 4))
+
+```
+
+### Visulaising the Data as Barpolt
+
+```{r}
+#| warning: false
+
+library(grid)
+library(gridExtra)
+library(magrittr)
+
+plot_implicated_subjects <- data_noura_alMuqati %>%
+  arrange(implicated_subjects) %>%
+  mutate(drug_perc=factor(drug_perc, levels=drug_perc)) %>%   
+  ggplot(aes(x = drug_perc, y = implicated_subjects)) +
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Implicated Subjects") +
+  coord_flip() +
+  theme_minimal()
+
+
+plot_total_costs <- data_noura_alMuqati %>%
+  arrange(total_costs) %>%
+  mutate(drug_perc=factor(drug_perc, levels=drug_perc)) %>%   
+  ggplot(aes(x = drug_perc, y = total_costs)) +
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Total Costs") +
+  coord_flip() +
+  theme_minimal()
+
+## Plutting it together
+grid.arrange(plot_total_costs,
+    plot_implicated_subjects,
+    widths=c(0.5,0.5),
+    ncol=2
+)
+
+```
+
+### Visulaising the Data as Barpolt with Commons Axis
+
+```{r}
+#| warning: false
+
+library(ggcharts)
+# Rearrange the data 
+
+rearrnaged_data_noura_alMuqati <- data_noura_alMuqati %>% 
+  mutate( "Total Costs" = total_costs ) %>% 
+  mutate( "Implicated Subjects" = implicated_subjects ) %>% 
+  select(drug_perc, "Total Costs", "Implicated Subjects") %>%
+  pivot_longer(!drug_perc, names_to = "type", values_to = "Drug")  
+
+## Plotting
+
+pyramid_chart(
+  data = rearrnaged_data_noura_alMuqati,
+  x = drug_perc,
+  y = Drug,
+  group = type,
+  sort = "descending",
+  xlab = NULL,
+)
+
+```
+
+
+
